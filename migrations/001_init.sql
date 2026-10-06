@@ -1,0 +1,11 @@
+CREATE TABLE users (id BIGSERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL, name VARCHAR(120) NOT NULL, role VARCHAR(20) NOT NULL CHECK (role IN ('ADMIN','USER')), is_active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE INDEX users_email_idx ON users(email);
+CREATE TABLE auth_sessions (id VARCHAR(36) PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE, expires_at TIMESTAMPTZ NOT NULL, revoked_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE INDEX auth_sessions_user_idx ON auth_sessions(user_id);
+CREATE TABLE categories (id BIGSERIAL PRIMARY KEY, name VARCHAR(80) NOT NULL UNIQUE, is_active BOOLEAN NOT NULL DEFAULT TRUE, created_by BIGINT NOT NULL REFERENCES users(id), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE TABLE expenses (id BIGSERIAL PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE, category_id BIGINT NOT NULL REFERENCES categories(id), amount NUMERIC(12,2) NOT NULL CHECK (amount > 0), spent_on DATE NOT NULL, merchant VARCHAR(160) NOT NULL, description TEXT, created_by BIGINT NOT NULL REFERENCES users(id), updated_by BIGINT NOT NULL REFERENCES users(id), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE INDEX expenses_owner_date_idx ON expenses(user_id, spent_on);
+CREATE TABLE budgets (id BIGSERIAL PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE, category_id BIGINT NOT NULL REFERENCES categories(id), month DATE NOT NULL, amount NUMERIC(12,2) NOT NULL CHECK (amount > 0), created_by BIGINT NOT NULL REFERENCES users(id), updated_by BIGINT NOT NULL REFERENCES users(id), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), UNIQUE(user_id, category_id, month));
+CREATE TABLE activity_logs (id BIGSERIAL PRIMARY KEY, user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE, action VARCHAR(60) NOT NULL, entity_type VARCHAR(40) NOT NULL, entity_id BIGINT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE INDEX activity_logs_user_idx ON activity_logs(user_id);
+
